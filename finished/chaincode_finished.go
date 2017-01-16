@@ -24,6 +24,8 @@ type PremiumPayment struct {
 	Amount int `json:"amount"`
 }
 
+var accountPrefix = "acct:"
+
 type Account struct {
 	ID string `json:"id"`
 	DOB int `json:"dob"`
@@ -32,7 +34,23 @@ type Account struct {
   Policies []string `json:"policies"`
 }
 
-var accountPrefix = "acct:"
+type ClaimInsurance struct{
+	AccID string `json:"accountID"`
+	PolicyNumber int `json:"policynumber"`
+	TypeOfClaim string `json:"type"`
+	DocVerified bool `json:"docverified"`
+	Amount int `json:"amount"`
+}
+
+func stringInSlice(a string, list []string) bool {
+    for _, b := range list {
+        if b == a {
+            return true
+        }
+    }
+    return false
+}
+
 
 func main() {
 	err := shim.Start(new(SimpleChaincode))
@@ -70,6 +88,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
     return t.add_balance(stub,args)
 	}else if function == "create_account"{
 		return t.create_account(stub, args)
+	}else if function == "claim_insurance"{
+		return t.claim_insurance(stub, args)
 	}
 	fmt.Println("invoke did not find func: " + function)
 
@@ -360,4 +380,88 @@ func (t *SimpleChaincode) add_balance(stub shim.ChaincodeStubInterface, args []s
   
  	
 	return nil,nil
+}
+
+//Clain Insurance 
+func (t *SimpleChaincode) claim_insurance(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
+	var err error
+	
+	if len(args)!=5{
+		return nil, errors.New("Incorrect number of arguments. Expecting 5")
+	}
+	
+	fmt.Println("- start claim_insurance")
+	
+	if len(args[0])<=0{
+		return nil, errors.New("AccID must be non-empty string")
+	}
+	if len(args[1])<=0{
+		return nil, errors.New("PolicyNumber must be non-empty int")
+	}
+	if len(args[2])<=0{
+		return nil, errors.New("Type must be non-empty")
+	}
+	if len(args[3])<=0{
+		return nil, errors.New("DocVerified must be non-empty")
+	}
+	if len(args[4])<=0{
+		return nil, errors.New("Amount must be non-empty")
+	}
+	
+	id := strings.ToLower(args[0])
+
+	policyNumberString := args[1]
+	
+	policynumber, err:= strconv.Atoi(args[1])
+	if err!=nil{
+		return nil, errors.New("PolicyNumber must be a numeric string")
+	}
+	
+	insuranceType := strings.ToLower(args[2])
+	
+	docverified, err:=  strconv.ParseBool(args[3])
+	if err!=nil{
+		return nil, errors.New("docverified must be a bool string")
+	}
+	
+	amount, err:= strconv.Atoi(args[4])
+	if err!=nil{
+		return nil, errors.New("amount must be a numeric string")
+	}
+
+	//Create a claim object
+	var claim = ClaimInsurance{ AccID: id ,PolicyNumber: policynumber, TypeOfClaim: insuranceType, DocVerified: true, Amount: amount}
+ 	claimBytes, err := json.Marshal(&claim)
+  if err != nil {
+		fmt.Println("error claiming insurance for " + id +" and policy no - " + policyNumberString )
+		return nil, errors.New("Error claiming insurance " + id)
+	}	
+	
+	//****************************************
+ 	//If has policy and not already claimed
+	//****************************************
+	accountBytes, err := stub.GetState(accountPrefix + id)
+	if err == nil {
+      //Account found
+    var account Account
+    err = json.Unmarshal(accountBytes, &account)
+    if err!=nil{
+      return nil, errors.New("Account reading problem")  
+    }
+    
+		policies := account.Policies
+		
+		if stringInSlice(policyNumberString, policies){
+			err = stub.PutState(strconv.Itoa(policynumber), claimBytes)
+    	if err!=nil{
+      	return nil, errors.New("Error adding claim")
+    	}	
+		}
+
+	}else{
+      //Account not found
+    return nil, errors.New("No account found for ID -->" + id)
+  }
+	
+  return nil,nil
 }
