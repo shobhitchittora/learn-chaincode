@@ -182,7 +182,7 @@ func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []
 	//Check if balance >= amount 
 	//********************************
 	
-	accountAsBytes, err := stub.GetState(strconv.Itoa(PolicyNumber))
+	accountAsBytes, err := stub.GetState("account")
 	if err != nil {
 		return nil, errors.New("Failed to get the Account info for the PolicyNumber")
 	}
@@ -243,7 +243,7 @@ func (t *SimpleChaincode) generate_balance(stub shim.ChaincodeStubInterface, arg
 	res :=  `{"policynumber" :` + strconv.Itoa(PolicyNumber) +
 					`, "balance": ` + strconv.Itoa(Balance) + `}`
 	
-	err = stub.PutState(strconv.Itoa(PolicyNumber), []byte(res))
+	err = stub.PutState("account", []byte(res))
 	if err!=nil{
 		return nil, err
 	}
