@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
-
+	"strings"
+	"strconv"
+	
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
@@ -12,7 +14,7 @@ type SimpleChaincode struct {
 }
 
 type PremiumPayment struct {
-	PolicyNumber string `json:"policynumber"`
+	PolicyNumber int64 `json:"policynumber"`
 	DOB int64 `json:"dob"`				//utc date
 	Email string `json:"email"`
 	ContactNumber string `json:"contactnumber"`
@@ -51,6 +53,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.Init(stub, "init", args)
 	} else if function == "write" {
 		return t.write(stub, args)
+	}else if function == "init_payment"{
+		return t.init_payment(stub,args)
 	}
 	fmt.Println("invoke did not find func: " + function)
 
@@ -106,4 +110,77 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 	}
 
 	return valAsbytes, nil
+}
+
+func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
+	var err error
+	
+	if len(args)!=7{
+		return nil, errors.New("Incorrect number of arguments. Expecting 7")
+	}
+	
+	fmt.Println("- start init payment")
+	if len(args[0])<=0{
+		return nil, errors.New("Policy Number must be non-empty string")
+	}
+	
+	if len(args[1])<=0{
+		return nil, errors.New("DOB must be non-empty int")
+	}
+	if len(args[2])<=0{
+		return nil, errors.New("Email must be non-empty string")
+	}
+	if len(args[3])<=0{
+		return nil, errors.New("ContactNumber must be non-empty string")
+	}
+	if len(args[4])<=0{
+		return nil, errors.New("Name must be non-empty string")
+	}
+	if len(args[5])<=0{
+		return nil, errors.New("DueDate must be non-empty int")
+	}
+	if len(args[6])<=0{
+		return nil, errors.New("Amount must be non-empty int")
+	}
+	
+	//Preparing fields for payment struct
+	//************************************
+	PolicyNumber, err:= strconv.Atoi(args[0]);
+	if err!=nil{
+		return nil, errors.New("PolicyNumber must be a numeric string")
+	}
+	
+	DOB, err:= strconv.Atoi(args[1]);
+	if err!=nil{
+		return nil, errors.New("DOB must be a numeric string")
+	}
+	
+	Email := strings.ToLower(args[2]);
+	ContactNumber := strings.ToLower(args[3]);
+	Name := strings.ToLower(args[4]);
+	
+	DueDate ,err:= strconv.Atoi(args[5]);
+	if err!=nil{
+		return nil, errors.New("DueDate must be a numeric string")
+	}
+	
+	Amount ,err:= strconv.Atoi(args[6]);
+	if err!=nil{
+		return nil, errors.New("Amount must be a numeric string")
+	}
+	
+	res := `{"policynumber" :` + strconv.Itoa(PolicyNumber) +
+					`, "dob": ` + strconv.Itoa(DOB) +
+					`, "email": "` + Email +
+					`", "contactnumber": "` + ContactNumber +
+					`", "name": "` + Name +
+					`", "duedate": ` + strconv.Itoa(DueDate) +
+					`, "amount": ` + strconv.Itoa(Amount) + `}`
+	
+	err = stub.PutState(strconv.FormatInt(int64(PolicyNumber),10), []byte(res))
+	if err!=nil{
+		return nil, err
+	}
+	
+	return nil,nil
 }
