@@ -25,9 +25,14 @@ type PremiumPayment struct {
 }
 
 type Account struct {
-	PolicyNumber int `json:"policynumber"`
+	ID string `json:"id"`
+	DOB int `json:"dob"`
+	Email string `json:"email"`
 	Balance int `json:"balance"`
+  Policies []string `json:"policies"`
 }
+
+var accountPrefix = "acct:"
 
 func main() {
 	err := shim.Start(new(SimpleChaincode))
@@ -61,8 +66,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.write(stub, args)
 	}else if function == "init_payment"{
 		return t.init_payment(stub,args)
-	}else if function == "generate_balance"{
-		return t.generate_balance(stub,args)
+	}else if function == "add_balance"{
+    return t.add_balance(stub,args)
+	}else if function == "create_account"{
+		return t.create_account(stub, args)
 	}
 	fmt.Println("invoke did not find func: " + function)
 
@@ -212,41 +219,130 @@ func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []
 	return nil,nil
 }
 
-// Generate balance for Payment
-func (t *SimpleChaincode) generate_balance(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
+
+	//Create Account for a user 
+func (t *SimpleChaincode) create_account(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
+	var err error
+	
+	if len(args)!=4{
+		return nil, errors.New("Incorrect number of arguments. Expecting 4")
+	}
+	
+	fmt.Println("- start create_account")
+	
+	if len(args[0])<=0{
+		return nil, errors.New("UserName must be non-empty int")
+	}
+	if len(args[1])<=0{
+		return nil, errors.New("DOB must be non-empty")
+	}
+	if len(args[2])<=0{
+		return nil, errors.New("Email must be non-empty")
+	}
+	if len(args[3])<=0{
+		return nil, errors.New("Balance must be non-empty")
+	}
+	
+	username := strings.ToLower(args[0])
+	
+	dob, err:= strconv.Atoi(args[1]);
+	if err!=nil{
+		return nil, errors.New("DOB must be a numeric string")
+	}
+	
+	email := strings.ToLower(args[2]);
+	
+  var policies []string
+  
+  var account = Account{ ID: username, DOB: dob, Email: email, Balance: 0, Policies: policies }
+ 	accountBytes, err := json.Marshal(&account)
+  if err != nil {
+		fmt.Println("error creating account" + account.ID)
+		return nil, errors.New("Error creating account " + account.ID)
+	}	
+	
+  fmt.Println("Attempting to get state of any existing account for " + account.ID)
+	existingBytes, err := stub.GetState(accountPrefix + account.ID)
+	if err == nil {
+
+		var user Account
+		err = json.Unmarshal(existingBytes, &user)
+		if err != nil {
+			fmt.Println("Error unmarshalling account " + account.ID + "\n--->: " + err.Error())
+
+			if strings.Contains(err.Error(), "unexpected end") {
+				fmt.Println("No data means existing account found for " + account.ID + ", initializing account.")
+				err = stub.PutState(accountPrefix + account.ID, accountBytes)
+
+				if err == nil {
+					fmt.Println("created account" + accountPrefix + account.ID)
+					return nil, nil
+				} else {
+					fmt.Println("failed to create initialize account for " + account.ID)
+					return nil, errors.New("failed to initialize an account for " + account.ID + " => " + err.Error())
+				}
+			} else {
+				return nil, errors.New("Error unmarshalling existing account " + account.ID)
+			}
+		} else {
+			fmt.Println("Account already exists for " + account.ID + " " + user.ID)
+			return nil, errors.New("Can't reinitialize existing user " + account.ID)
+		}
+	} else {
+
+		fmt.Println("No existing account found for " + account.ID + ", initializing account.")
+		err = stub.PutState(accountPrefix + account.ID, accountBytes)
+
+		if err == nil {
+			fmt.Println("created account" + accountPrefix + account.ID)
+			return nil, nil
+		} else {
+			fmt.Println("failed to create initialize account for " + account.ID)
+			return nil, errors.New("failed to initialize an account for " + account.ID + " => " + err.Error())
+		}
+
+	}
+	return nil,nil	
+}
+
+	
+	
+	// Add balance for Account 
+func (t *SimpleChaincode) add_balance(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
 	var err error
 	
 	if len(args)!=2{
 		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
 	
-	fmt.Println("- start generate_balance")
+	fmt.Println("- start add_balance")
 	
 	if len(args[0])<=0{
-		return nil, errors.New("PolicyNumber must be non-empty int")
+		return nil, errors.New("UserName must be non-empty int")
 	}
 	
 	if len(args[1])<=0{
 		return nil, errors.New("Balance must be non-empty")
 	}
 	
-	PolicyNumber, err := strconv.Atoi(args[0])
-	if err!=nil{
-		return nil, errors.New("PolicyNumber must be a numeric string")
-	}
-	
+  UserName := strings.ToLower(args[0])
+  
 	Balance, err:= strconv.Atoi(args[1])
 	if err!=nil{
 		return nil, errors.New("Balance must be a numeric string")
 	}
+  
+  
 	
-	res :=  `{"policynumber" :` + strconv.Itoa(PolicyNumber) +
-					`, "balance": ` + strconv.Itoa(Balance) + `}`
+// 	res :=  `{"username" :"` + Username +
+// 					`", "dob": ` + strconv.Itoa(DOB) + 
+// 					`, "email": "` + Email + 
+// 					`", "balance": ` + strconv.Itoa(Balance) + `}`
 	
-	err = stub.PutState("account", []byte(res))
-	if err!=nil{
-		return nil, err
-	}
+// 	err = stub.PutState("account", []byte(res))
+// 	if err!=nil{
+// 		return nil, err
+// 	}
 	
 	return nil,nil
 }
