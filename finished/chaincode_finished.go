@@ -430,7 +430,7 @@ func (t *SimpleChaincode) claim_insurance(stub shim.ChaincodeStubInterface, args
 	}
 
 	//Create a claim object
-	var claim = ClaimInsurance{ AccID: id ,PolicyNumber: policynumber, TypeOfClaim: insuranceType, DocVerified: true, Amount: amount}
+	var claim = ClaimInsurance{ AccID: id ,PolicyNumber: policynumber, TypeOfClaim: insuranceType, DocVerified: docverified, Amount: amount}
  	claimBytes, err := json.Marshal(&claim)
   if err != nil {
 		fmt.Println("error claiming insurance for " + id +" and policy no - " + policyNumberString )
