@@ -325,24 +325,39 @@ func (t *SimpleChaincode) add_balance(stub shim.ChaincodeStubInterface, args []s
 		return nil, errors.New("Balance must be non-empty")
 	}
 	
-//   UserName := strings.ToLower(args[0])
+  id := strings.ToLower(args[0])
   
-// 	Balance, err:= strconv.Atoi(args[1])
-// 	if err!=nil{
-// 		return nil, errors.New("Balance must be a numeric string")
-// 	}
+	balance, err:= strconv.Atoi(args[1])
+	if err!=nil{
+		return nil, errors.New("Balance must be a numeric string")
+	}
   
   
-	
-// 	res :=  `{"username" :"` + Username +
-// 					`", "dob": ` + strconv.Itoa(DOB) + 
-// 					`, "email": "` + Email + 
-// 					`", "balance": ` + strconv.Itoa(Balance) + `}`
-	
-// 	err = stub.PutState("account", []byte(res))
-// 	if err!=nil{
-// 		return nil, err
-// 	}
-	
+	//******************************
+  //Check if Account exists or not
+  //******************************
+  
+  accountBytes, err := stub.GetState(accountPrefix + id)
+	if err == nil {
+      //Account found
+    var account Account
+    err = json.Unmarshal(accountBytes, &account)
+    if err!=nil{
+      return nil, errors.New("Account reading problem")  
+    }
+    
+    account.Balance = balance
+    
+    err = stub.PutState(accountPrefix + id, accountBytes)
+    if err!=nil{
+      return nil, errors.New("Error adding balance")
+    }
+
+  }else{
+      //Account not found
+    return nil, errors.New("No account found for ID -->" + id)
+  }
+  
+ 	
 	return nil,nil
 }
