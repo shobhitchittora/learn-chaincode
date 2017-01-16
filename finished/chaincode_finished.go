@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"strconv"
-	
+	"encoding/json"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
@@ -175,6 +176,24 @@ func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []
 	Amount ,err:= strconv.Atoi(args[6]);
 	if err!=nil{
 		return nil, errors.New("Amount must be a numeric string")
+	}
+	
+	//********************************
+	//Check if balance >= amount 
+	//********************************
+	
+	accountAsBytes, err := stub.GetState(strconv.Itoa(PolicyNumber))
+	if err != nil {
+		return nil, errors.New("Failed to get the Account info for the PolicyNumber")
+	}
+	
+	acc := Account{}
+	json.Unmarshal(accountAsBytes, &acc)
+	
+	if(acc.Balance < Amount){
+		fmt.Println("Not Enough Balance for PolicyNumber: " + strconv.Itoa(PolicyNumber))
+		fmt.Println(acc);
+		return nil, errors.New("Transaction Cancelled")	
 	}
 	
 	res := `{"policynumber" :` + strconv.Itoa(PolicyNumber) +
