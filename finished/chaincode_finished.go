@@ -90,6 +90,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.create_account(stub, args)
 	}else if function == "claim_insurance"{
 		return t.claim_insurance(stub, args)
+	}else if function == "buy_policy"{
+		return t.buy_policy(stub, args)
 	}
 	fmt.Println("invoke did not find func: " + function)
 
@@ -380,6 +382,62 @@ func (t *SimpleChaincode) add_balance(stub shim.ChaincodeStubInterface, args []s
   
  	
 	return nil,nil
+}
+//Buy Policy
+func (t *SimpleChaincode) buy_policy(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
+	var err error
+	
+	if len(args)!=2{
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	}
+	
+	fmt.Println("- start buy_policy")
+	
+	if len(args[0])<=0{
+		return nil, errors.New("AccID must be non-empty string")
+	}
+	if len(args[1])<=0{
+		return nil, errors.New("PolicyNumber must be non-empty int")
+	}
+	
+	id := strings.ToLower(args[0])
+
+	policyNumberString := args[1]
+	
+	policynumber, err:= strconv.Atoi(args[1])
+	if err!=nil{
+		return nil, errors.New("PolicyNumber must be a numeric string")
+	}
+	
+	accountBytes, err := stub.GetState(accountPrefix + id)
+	if err == nil {
+      //Account found
+    var account Account
+    err = json.Unmarshal(accountBytes, &account)
+    if err!=nil{
+      return nil, errors.New("Account reading problem")  
+    }
+    
+		policies := account.Policies
+		
+		if !stringInSlice(policyNumberString, policies){
+			account.Policies = append(account.Policies, policyNumberString)
+			
+			err = stub.PutState(accountPrefix + id, accountBytes)
+    		if err!=nil{
+      	return nil, errors.New("Error adding balance")
+    	}
+			
+		}else{
+			return nil, errors.New("policy already bought")
+		}
+
+	}else{
+      //Account not found
+    return nil, errors.New("No account found for ID -->" + id)
+  }
+	
+	return nil, nil
 }
 
 //Clain Insurance 
