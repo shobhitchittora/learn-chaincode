@@ -14,13 +14,13 @@ type SimpleChaincode struct {
 }
 
 type PremiumPayment struct {
-	PolicyNumber int64 `json:"policynumber"`
-	DOB int64 `json:"dob"`				//utc date
+	PolicyNumber int `json:"policynumber"`
+	DOB int `json:"dob"`				//utc date
 	Email string `json:"email"`
 	ContactNumber string `json:"contactnumber"`
 	Name string `json:"name"`
-	DueDate int64 `json:"duedate"` 	//utc date
-	Amount int64 `json:"amount"`
+	DueDate int `json:"duedate"` 	//utc date
+	Amount int `json:"amount"`
 }
 
 func main() {
@@ -121,7 +121,7 @@ func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []
 	
 	fmt.Println("- start init payment")
 	if len(args[0])<=0{
-		return nil, errors.New("Policy Number must be non-empty string")
+		return nil, errors.New("Policy Number must be non-empty int")
 	}
 	
 	if len(args[1])<=0{
@@ -177,7 +177,7 @@ func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []
 					`", "duedate": ` + strconv.Itoa(DueDate) +
 					`, "amount": ` + strconv.Itoa(Amount) + `}`
 	
-	err = stub.PutState(strconv.FormatInt(int64(PolicyNumber),10), []byte(res))
+	err = stub.PutState(strconv.Itoa(PolicyNumber), []byte(res))
 	if err!=nil{
 		return nil, err
 	}
