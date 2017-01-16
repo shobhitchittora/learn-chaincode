@@ -404,10 +404,10 @@ func (t *SimpleChaincode) buy_policy(stub shim.ChaincodeStubInterface, args []st
 
 	policyNumberString := args[1]
 	
-	policynumber, err:= strconv.Atoi(args[1])
-	if err!=nil{
-		return nil, errors.New("PolicyNumber must be a numeric string")
-	}
+// 	policynumber, err:= strconv.Atoi(args[1])
+// 	if err!=nil{
+// 		return nil, errors.New("PolicyNumber must be a numeric string")
+// 	}
 	
 	accountBytes, err := stub.GetState(accountPrefix + id)
 	if err == nil {
