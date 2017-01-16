@@ -325,12 +325,12 @@ func (t *SimpleChaincode) add_balance(stub shim.ChaincodeStubInterface, args []s
 		return nil, errors.New("Balance must be non-empty")
 	}
 	
-  UserName := strings.ToLower(args[0])
+//   UserName := strings.ToLower(args[0])
   
-	Balance, err:= strconv.Atoi(args[1])
-	if err!=nil{
-		return nil, errors.New("Balance must be a numeric string")
-	}
+// 	Balance, err:= strconv.Atoi(args[1])
+// 	if err!=nil{
+// 		return nil, errors.New("Balance must be a numeric string")
+// 	}
   
   
 	
