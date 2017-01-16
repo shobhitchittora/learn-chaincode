@@ -23,6 +23,11 @@ type PremiumPayment struct {
 	Amount int `json:"amount"`
 }
 
+type Account struct {
+	PolicyNumber int `json:"policynumber"`
+	Balance int `json:"balance"`
+}
+
 func main() {
 	err := shim.Start(new(SimpleChaincode))
 	if err != nil {
@@ -55,6 +60,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.write(stub, args)
 	}else if function == "init_payment"{
 		return t.init_payment(stub,args)
+	}else if function == "generate_balance"{
+		return t.generate_balance(stub,args)
 	}
 	fmt.Println("invoke did not find func: " + function)
 
@@ -112,6 +119,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 	return valAsbytes, nil
 }
 
+//Init Payment for Premium
 func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
 	var err error
 	
@@ -176,6 +184,45 @@ func (t *SimpleChaincode) init_payment(stub shim.ChaincodeStubInterface, args []
 					`", "name": "` + Name +
 					`", "duedate": ` + strconv.Itoa(DueDate) +
 					`, "amount": ` + strconv.Itoa(Amount) + `}`
+	
+	err = stub.PutState(strconv.Itoa(PolicyNumber), []byte(res))
+	if err!=nil{
+		return nil, err
+	}
+	
+	return nil,nil
+}
+
+// Generate balance for Payment
+func (t *SimpleChaincode) generate_balance(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
+	var err error
+	
+	if len(args)!=2{
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	}
+	
+	fmt.Println("- start generate_balance")
+	
+	if len(args[0])<=0{
+		return nil, errors.New("PolicyNumber must be non-empty int")
+	}
+	
+	if len(args[1])<=0{
+		return nil, errors.New("Balance must be non-empty")
+	}
+	
+	PolicyNumber, err := strconv.Atoi(args[0])
+	if err!=nil{
+		return nil, errors.New("PolicyNumber must be a numeric string")
+	}
+	
+	Balance, err:= strconv.Atoi(args[1])
+	if err!=nil{
+		return nil, errors.New("Balance must be a numeric string")
+	}
+	
+	res :=  `{"policynumber" :` + strconv.Itoa(PolicyNumber) +
+					`, "balance": ` + strconv.Itoa(Balance) + `}`
 	
 	err = stub.PutState(strconv.Itoa(PolicyNumber), []byte(res))
 	if err!=nil{
