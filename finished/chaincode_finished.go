@@ -400,7 +400,13 @@ func (t *SimpleChaincode) add_balance(stub shim.ChaincodeStubInterface, args []s
 		//Increment the balance
     account.Balance = account.Balance +  balance
     
-    err = stub.PutState(accountPrefix + id, accountBytes)
+		//Create byte stream of new Account details
+		newAccountBytes, err := json.Marshal(&account)
+		if err != nil {
+			fmt.Println("error creating account" + account.ID)
+			return nil, errors.New("Error creating account " + account.ID)
+		}	
+    err = stub.PutState(accountPrefix + id, newAccountBytes)
     if err!=nil{
       return nil, errors.New("Error adding balance")
     }
