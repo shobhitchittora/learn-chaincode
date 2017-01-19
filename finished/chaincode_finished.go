@@ -154,7 +154,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 }
 
 func (t *SimpleChaincode) get_balance(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var key, jsonResp string
+	var jsonResp string
 	var err error
 
 	if len(args) != 1 {
