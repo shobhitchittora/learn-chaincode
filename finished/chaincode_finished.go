@@ -161,7 +161,14 @@ func (t *SimpleChaincode) get_balance(stub shim.ChaincodeStubInterface, args []s
 		return nil, errors.New("Incorrect number of arguments. Expecting id of the account")
 	}
 
-	accid := args[0]
+	fmt.Println("- start get_balance")
+	
+	if len(args[0])<=0{
+		return nil, errors.New("UserName must be non-empty int")
+	}
+	
+	accid := strings.ToLower(args[0])
+	
 	valAsbytes, err := stub.GetState(accountPrefix + accid)
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + accid + "\"}"
