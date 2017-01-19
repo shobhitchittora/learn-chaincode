@@ -458,8 +458,16 @@ func (t *SimpleChaincode) buy_policy(stub shim.ChaincodeStubInterface, args []st
 		
 		if !stringInSlice(policyNumberString, policies){
 			account.Policies = append(account.Policies, policyNumberString)
+	
 			
-			err = stub.PutState(accountPrefix + id, accountBytes)
+			//Create byte stream of new Account details
+			newAccountBytes, err := json.Marshal(&account)
+			if err != nil {
+				fmt.Println("error creating account" + account.ID)
+				return nil, errors.New("Error creating account " + account.ID)
+			}	
+			
+			err = stub.PutState(accountPrefix + id, newAccountBytes)
     		if err!=nil{
       	return nil, errors.New("Error adding balance")
     	}
