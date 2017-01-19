@@ -390,7 +390,8 @@ func (t *SimpleChaincode) add_balance(stub shim.ChaincodeStubInterface, args []s
       return nil, errors.New("Account reading problem")  
     }
     
-    account.Balance = balance
+		//Increment the balance
+    account.Balance = account.Balance +  balance
     
     err = stub.PutState(accountPrefix + id, accountBytes)
     if err!=nil{
