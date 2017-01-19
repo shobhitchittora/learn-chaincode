@@ -35,6 +35,7 @@ type Account struct {
   Policies []string `json:"policies"`
 }
 
+var claimPrefix = "claim:"
 //Claim Insurance model
 type ClaimInsurance struct{
 	AccID string `json:"accountID"`
@@ -553,8 +554,15 @@ func (t *SimpleChaincode) claim_insurance(stub shim.ChaincodeStubInterface, args
     
 		policies := account.Policies
 		
+		//Has policy
 		if stringInSlice(policyNumberString, policies){
-			err = stub.PutState(strconv.Itoa(policynumber), claimBytes)
+			//Not already claimed
+			err = stub.GetState(claimPrefix + policyNumberString)
+			if err!=nil{
+				return nil, erros.New("Already Claimed for policymnumber " + policyNumberString)
+			}
+			//=> Claim not already found
+			err = stub.PutState( claimPrefix + policyNumberString, claimBytes)
     	if err!=nil{
       	return nil, errors.New("Error adding claim")
     	}	
