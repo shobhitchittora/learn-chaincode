@@ -568,6 +568,8 @@ func (t *SimpleChaincode) claim_insurance(stub shim.ChaincodeStubInterface, args
 					return nil, errors.New("Error adding claim")
 				}
 			}	
+		}else{
+			return nil, errors.New("Policy Not bought for " + policyNumberString);
 		}
 
 	}else{
