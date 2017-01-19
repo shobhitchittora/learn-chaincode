@@ -557,9 +557,10 @@ func (t *SimpleChaincode) claim_insurance(stub shim.ChaincodeStubInterface, args
 		//Has policy
 		if stringInSlice(policyNumberString, policies){
 			//Not already claimed
-			err = stub.GetState(claimPrefix + policyNumberString)
+			var claim []byte
+			claim ,err = stub.GetState(claimPrefix + policyNumberString)
 			if err!=nil{
-				return nil, erros.New("Already Claimed for policymnumber " + policyNumberString)
+				return nil, errors.New("Already Claimed for policymnumber " + policyNumberString)
 			}
 			//=> Claim not already found
 			err = stub.PutState( claimPrefix + policyNumberString, claimBytes)
