@@ -488,6 +488,7 @@ func (t *SimpleChaincode) buy_policy(stub shim.ChaincodeStubInterface, args []st
 //Clain Insurance 
 func (t *SimpleChaincode) claim_insurance(stub shim.ChaincodeStubInterface, args []string) ([]byte,error){
 	var err error
+	var jsonResp string
 	
 	if len(args)!=5{
 		return nil, errors.New("Incorrect number of arguments. Expecting 5")
@@ -560,22 +561,26 @@ func (t *SimpleChaincode) claim_insurance(stub shim.ChaincodeStubInterface, args
 		
 			_ ,err = stub.GetState( claimPrefix + policyNumberString)
 			if err!=nil{
-				return nil, errors.New("Already Claimed for policymnumber " + policyNumberString)
+				jsonResp = "{\"Error\":\"Already Claimed for policymnumber " + policyNumberString + "\"}"
+				return nil, errors.New(jsonResp)
 			}else{
 				//=> Claim not already found
 				fmt.Println("Filing Claim for policyNumber " + policyNumberString )
 				err = stub.PutState( claimPrefix + policyNumberString, claimBytes)
 				if err!=nil{
-					return nil, errors.New("Error adding claim")
+					jsonResp = "{\"Error\":\"Error adding claim for - " + policyNumberString + "\"}"
+					return nil, errors.New(jsonResp)
 				}
 			}	
 		}else{
-			return nil, errors.New("Policy Not bought for " + policyNumberString);
+			jsonResp = "{\"Error\":\"Policy Not bought for  - " + policyNumberString + "\"}"
+			return nil, errors.New(jsonResp);
 		}
 
 	}else{
       //Account not found
-    return nil, errors.New("No account found for ID -->" + id)
+		jsonResp = "{\"Error\":\"No account found for ID --> " + id + "\"}"
+    return nil, errors.New(jsonResp)
   }
 	
   return nil,nil
