@@ -110,6 +110,8 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return t.read(stub, args)
 	}else if function == "get_balance"{
 		return t.get_balance(stub, args)
+	}else if function == "get_claim"{
+		return t.get_claim(stub, args)
 	}
 	fmt.Println("query did not find func: " + function)
 
@@ -173,6 +175,33 @@ func (t *SimpleChaincode) get_balance(stub shim.ChaincodeStubInterface, args []s
 	valAsbytes, err := stub.GetState(accountPrefix + accid)
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + accid + "\"}"
+		return nil, errors.New(jsonResp)
+	}
+
+	return valAsbytes, nil
+}
+
+
+func (t *SimpleChaincode) get_claim(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var jsonResp string
+	var err error
+
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting policynumber for claim")
+	}
+
+	fmt.Println("- start get_claim")
+	
+	if len(args[0])<=0{
+		return nil, errors.New("PolicyNumber must be non-empty int")
+	}
+	
+	policyNumberString := args[0]
+	
+		
+	valAsbytes, err := stub.GetState(claimPrefix + policyNumberString)
+	if err != nil {
+		jsonResp = "{\"Error\":\"Failed to get claim for " + policyNumberString + "\"}"
 		return nil, errors.New(jsonResp)
 	}
 
