@@ -176,7 +176,7 @@ func (t *SimpleChaincode) getBalance(stub shim.ChaincodeStubInterface, args []st
 	valAsbytes, err := stub.GetState(accountPrefix + accid)
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + accid + "\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(jsonResp), errors.New(jsonResp)
 	}
 
 	return valAsbytes, nil
