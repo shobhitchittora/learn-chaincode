@@ -583,6 +583,7 @@ func (t *SimpleChaincode) claimInsurance(stub shim.ChaincodeStubInterface, args 
 		if stringInSlice(policyNumberString, policies) {
 			//Not already claimed
 
+			// Reading the Claim from BlockChain and checking for validity
 			existingClaimBytes, err := stub.GetState(claimPrefix + policyNumberString)
 			if err != nil {
 				jsonResp = "{\"Error\":\"Already Claimed for policymnumber " + policyNumberString + "\"}"
