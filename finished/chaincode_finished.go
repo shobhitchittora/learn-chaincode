@@ -176,7 +176,7 @@ func (t *SimpleChaincode) getBalance(stub shim.ChaincodeStubInterface, args []st
 	valAsbytes, err := stub.GetState(accountPrefix + accid)
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + accid + "\"}"
-		return []byte(jsonResp), errors.New(jsonResp)
+		return nil, errors.New(jsonResp)
 	}
 
 	return valAsbytes, nil
@@ -361,7 +361,7 @@ func (t *SimpleChaincode) createAccount(stub shim.ChaincodeStubInterface, args [
 					return nil, errors.New("failed to initialize an account for " + account.ID + " => " + err.Error())
 				}
 			} else {
-				return nil, errors.New("Error unmarshalling existing account " + account.ID)
+				//return nil, errors.New("Error unmarshalling existing account " + account.ID)
 			}
 		} else {
 			fmt.Println("Account already exists for " + account.ID + " " + user.ID)
@@ -583,18 +583,25 @@ func (t *SimpleChaincode) claimInsurance(stub shim.ChaincodeStubInterface, args 
 		if stringInSlice(policyNumberString, policies) {
 			//Not already claimed
 
-			_, err = stub.GetState(claimPrefix + policyNumberString)
+			existingClaimBytes, err := stub.GetState(claimPrefix + policyNumberString)
 			if err != nil {
 				jsonResp = "{\"Error\":\"Already Claimed for policymnumber " + policyNumberString + "\"}"
 				return nil, errors.New(jsonResp)
 			} else {
 				//=> Claim not already found
-				fmt.Println("Filing Claim for policyNumber " + policyNumberString)
-				err = stub.PutState(claimPrefix+policyNumberString, claimBytes)
+				var claimObject ClaimInsurance
+				err = json.Unmarshal(existingClaimBytes, &claimObject)
 				if err != nil {
-					jsonResp = "{\"Error\":\"Error adding claim for - " + policyNumberString + "\"}"
-					return nil, errors.New(jsonResp)
+					fmt.Println("Filing Claim for policyNumber " + policyNumberString)
+					err = stub.PutState(claimPrefix+policyNumberString, claimBytes)
+					if err != nil {
+						jsonResp = "{\"Error\":\"Error adding claim for - " + policyNumberString + "\"}"
+						return nil, errors.New(jsonResp)
+					}
+				} else {
+					return nil, errors.New("Sucess unmarshalling existing Claim " + claimPrefix + policyNumberString)
 				}
+
 			}
 		} else {
 			jsonResp = "{\"Error\":\"Policy Not bought for  - " + policyNumberString + "\"}"
